@@ -4128,5 +4128,9 @@
   "sidebar.threads.hide": "{title} ausblenden",
   "sidebar.threads.hideShort": "Ausblenden",
   "sidebar.threads.running": "+{count} laufen",
-  "sidebar.threads.more": "{count} weitere"
+  "sidebar.threads.more": "{count} weitere",
+  "chat.notice.savedToThread": "In diesem Thread gespeichert",
+  "memoryPage.thisThread": "Dieser Thread",
+  "memoryPage.everywhere": "Überall",
+  "memoryPage.empty": "Hier ist noch nichts gespeichert. Schreib alles auf, was er wissen soll."
 }

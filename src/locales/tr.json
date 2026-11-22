@@ -5923,5 +5923,9 @@
   "sidebar.threads.hide": "{title} gizle",
   "sidebar.threads.hideShort": "Gizle",
   "sidebar.threads.running": "+{count} çalışıyor",
-  "sidebar.threads.more": "{count} tane daha"
+  "sidebar.threads.more": "{count} tane daha",
+  "chat.notice.savedToThread": "Bu konuşmaya kaydedildi",
+  "memoryPage.thisThread": "Bu konuşma",
+  "memoryPage.everywhere": "Her yerde",
+  "memoryPage.empty": "Burada henüz hatırlanan bir şey yok. Bilmesini istediğin her şeyi yaz."
 }

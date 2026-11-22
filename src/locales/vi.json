@@ -5923,5 +5923,9 @@
   "sidebar.threads.hide": "Ẩn {title}",
   "sidebar.threads.hideShort": "Ẩn",
   "sidebar.threads.running": "+{count} đang chạy",
-  "sidebar.threads.more": "thêm {count}"
+  "sidebar.threads.more": "thêm {count}",
+  "chat.notice.savedToThread": "Đã lưu vào luồng này",
+  "memoryPage.thisThread": "Luồng này",
+  "memoryPage.everywhere": "Mọi nơi",
+  "memoryPage.empty": "Chưa có gì được ghi nhớ ở đây. Hãy viết bất cứ điều gì bạn muốn nó biết."
 }

@@ -4103,5 +4103,9 @@
   "sidebar.threads.hide": "Сховати {title}",
   "sidebar.threads.hideShort": "Сховати",
   "sidebar.threads.running": "+{count} у роботі",
-  "sidebar.threads.more": "ще {count}"
+  "sidebar.threads.more": "ще {count}",
+  "chat.notice.savedToThread": "Збережено в цій гілці",
+  "memoryPage.thisThread": "Ця гілка",
+  "memoryPage.everywhere": "Усюди",
+  "memoryPage.empty": "Тут поки нічого не запам'ятано. Напишіть усе, що він має знати."
 }

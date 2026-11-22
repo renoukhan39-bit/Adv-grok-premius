@@ -5915,6 +5915,9 @@
   "skills.loading": "Ładowanie…",
   "skills.empty": "Brak zainstalowanych umiejętności.",
   "memory.title": "Pamięć",
+  "memoryPage.thisThread": "Ten wątek",
+  "memoryPage.everywhere": "Wszędzie",
+  "memoryPage.empty": "Nic tu jeszcze nie zapamiętano. Napisz wszystko, co ma wiedzieć.",
   "memory.enable": "Pozwól temu botowi używać pamięci",
   "memory.enableHelp": "Wyłączenie zatrzymuje zapytania do pamięci, przywoływanie, natywne narzędzia pamięci, porządkowanie i automatyczne dzienniki tur. Istniejące pliki pozostają dostępne do przeglądu.",
   "memory.notesHelp": "Notatki, które ten bot zachowuje między zadaniami. To zwykłe pliki markdown w folderze na tym komputerze — otwórz je w dowolnym edytorze lub w Obsidian.",
@@ -7124,5 +7127,6 @@
   "sidebar.threads.hide": "Ukryj {title}",
   "sidebar.threads.hideShort": "Ukryj",
   "sidebar.threads.running": "+{count} w toku",
-  "sidebar.threads.more": "jeszcze {count}"
+  "sidebar.threads.more": "jeszcze {count}",
+  "chat.notice.savedToThread": "Zapisano w tym wątku"
 }

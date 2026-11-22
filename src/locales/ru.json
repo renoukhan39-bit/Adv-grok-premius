@@ -6005,6 +6005,9 @@
   "skills.loading": "Загрузка…",
   "skills.empty": "Установленных навыков пока нет.",
   "memory.title": "Память",
+  "memoryPage.thisThread": "Эта ветка",
+  "memoryPage.everywhere": "Везде",
+  "memoryPage.empty": "Здесь пока ничего не запомнено. Напишите всё, что он должен знать.",
   "memory.enable": "Разрешить боту использовать память",
   "memory.enableHelp": "В выключенном состоянии отключаются запросы к памяти, воспоминания, нативные инструменты памяти, обслуживание и автоматические журналы хода работы. Существующие файлы остаются доступны для просмотра.",
   "memory.notesHelp": "Заметки, которые бот ведёт между задачами. Это обычные markdown-файлы в папке на этом компьютере — их можно открыть в любом редакторе или в Obsidian.",
@@ -7178,5 +7181,6 @@
   "sidebar.threads.hide": "Скрыть {title}",
   "sidebar.threads.hideShort": "Скрыть",
   "sidebar.threads.running": "+{count} в работе",
-  "sidebar.threads.more": "ещё {count}"
+  "sidebar.threads.more": "ещё {count}",
+  "chat.notice.savedToThread": "Сохранено в этой ветке"
 }

@@ -6723,6 +6723,9 @@
   "skills.loading": "読み込み中…",
   "skills.empty": "インストール済みのスキルはまだありません。",
   "memory.title": "メモリー",
+  "memoryPage.thisThread": "このスレッド",
+  "memoryPage.everywhere": "すべての会話",
+  "memoryPage.empty": "ここにはまだ何も記憶されていません。知っておいてほしいことを書いてください。",
   "memory.enable": "このボットにメモリーの使用を許可",
   "memory.enableHelp": "オフにすると、メモリーのプロンプト、想起、ネイティブのメモリーツール、メンテナンス、ターンの自動ログが停止します。既存のファイルは、確認用に引き続き利用できます。",
   "memory.notesHelp": "このボットがタスクの合間に保持するメモです。このコンピューター上のフォルダーにあるプレーンな Markdown ファイルで、任意のエディターや Obsidian で開けます。",
@@ -7964,5 +7967,6 @@
   "sidebar.threads.hide": "{title} を非表示",
   "sidebar.threads.hideShort": "非表示",
   "sidebar.threads.running": "+{count} 件実行中",
-  "sidebar.threads.more": "他 {count} 件"
+  "sidebar.threads.more": "他 {count} 件",
+  "chat.notice.savedToThread": "このスレッドに保存しました"
 }

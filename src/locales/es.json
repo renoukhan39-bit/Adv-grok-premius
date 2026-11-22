@@ -6428,5 +6428,9 @@
   "sidebar.threads.hide": "Ocultar {title}",
   "sidebar.threads.hideShort": "Ocultar",
   "sidebar.threads.running": "+{count} en curso",
-  "sidebar.threads.more": "{count} más"
+  "sidebar.threads.more": "{count} más",
+  "chat.notice.savedToThread": "Guardado en este hilo",
+  "memoryPage.thisThread": "Este hilo",
+  "memoryPage.everywhere": "En todas partes",
+  "memoryPage.empty": "Aquí todavía no hay nada guardado. Escribe lo que quieras que sepa."
 }
