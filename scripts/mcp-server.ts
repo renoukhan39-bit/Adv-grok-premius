@@ -4,7 +4,7 @@
 import readline from "node:readline";
 import { allowedServerOrigin, EXAMPLE_ADDRESS } from "../electron/server-address.mjs";
 import { isRecord, projectMessage } from "./mcp-message-projection.ts";
-import { listWorkspaceVideos, readWorkspaceVideo, renderWorkspaceVideo } from "./advance-video-pipe.mjs";
+import { listWorkspaceVideos, readWorkspaceVideo, renderWorkspaceVideo, VideoResourceError } from "./advance-video-pipe.mjs";
 
 /** A server's base URL: https anywhere, http only on loopback or a private network (LAN, Tailscale). */
 export function validateBaseUrl(url: string): string {
@@ -1375,6 +1375,13 @@ export async function processMcpMessage(
   } catch (err: any) {
     if ((err?.name === "AbortError" || err?.message === "Request cancelled") && !isNotification) {
       return formatResponse(id, undefined, { code: -32800, message: "Request cancelled" });
+    }
+    if (!isNotification && (method === "resources/read" || method === "resources/list")) {
+      if (err instanceof VideoResourceError) return formatResponse(id, undefined, err);
+      if (method === "resources/read" && err?.code === "ENOENT") {
+        return formatResponse(id, undefined, VideoResourceError.notFound());
+      }
+      return formatResponse(id, undefined, { code: -32603, message: "Could not access video resources in the selected workspace" });
     }
     log(`Error handling ${method}: ${err?.message || err}`);
     if (err instanceof ToolInputError && !isNotification) {

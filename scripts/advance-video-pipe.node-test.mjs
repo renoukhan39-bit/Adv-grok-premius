@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 import { createInterface } from "node:readline";
 import { after, it } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -47,6 +47,7 @@ async function client(t, workspace) {
     });
     child.stdin.write(JSON.stringify({ jsonrpc: "2.0", id, method, params }) + "\n");
     const message = await response;
+    assert.notEqual(Object.hasOwn(message, "result"), Object.hasOwn(message, "error"));
     return message.error ? { error: message.error } : message.result;
   }
   const hello = await send("initialize", {
@@ -87,12 +88,15 @@ it("discovers advance-video-pipe and returns a re-openable 320x180 one-second ar
   assert.equal(JSON.stringify(answer).includes(a), false, "MCP response must not reveal host file paths");
   assert.equal(JSON.stringify(answer).includes(b), false);
   const resources = await call("resources/list");
-  assert.ok(resources.resources.some(item => item.uri === artifact));
+  const listed = resources.resources.find(item => item.uri === artifact);
+  assert.ok(listed);
   const read = await call("resources/read", { uri: artifact });
   assert.equal(read.contents.length, 1);
   assert.equal(read.contents[0].mimeType, "video/mp4");
   const reopened = join(workspaceDir, "reopened.mp4");
-  await writeFile(reopened, Buffer.from(read.contents[0].blob, "base64"));
+  const downloaded = Buffer.from(read.contents[0].blob, "base64");
+  assert.deepEqual(downloaded, await readFile(join(a, ".advance-video-pipe", "artifacts", listed.name)));
+  await writeFile(reopened, downloaded);
   const verified = spawnSync(process.execPath, [verify, reopened], { encoding: "utf8", timeout: 15_000 });
   assert.equal(verified.status, 0, verified.stderr);
   assert.deepEqual(JSON.parse(verified.stdout), { duration, width, height });
@@ -106,7 +110,8 @@ it("denies cross-workspace plans and artifacts without producing any file", { sk
   const { a, b } = await fixture(t);
   const callA = await client(t, a);
   const callB = await client(t, b);
-  const forbidden = await callA("tools/call", { name: "advance-video-pipe_render_scene_plan", arguments: { plan_path: "../b/scenes/foreign.json" } });
+  const otherPlan = relative(a, join(b, "scenes", "foreign.json")).split(sep).join("/");
+  const forbidden = await callA("tools/call", { name: "advance-video-pipe_render_scene_plan", arguments: { plan_path: otherPlan } });
   assert.equal(forbidden.isError, true);
   assert.match(forbidden.content[0].text, /selected workspace/);
   const missing = await callA("tools/call", { name: "advance-video-pipe_render_scene_plan", arguments: { plan_path: "scenes/missing.json" } });
@@ -118,12 +123,37 @@ it("denies cross-workspace plans and artifacts without producing any file", { sk
     assert.equal(linked.isError, true);
     assert.match(linked.content[0].text, /outside the selected workspace/);
   }
+  const otherImage = join(b, "scenes", "foreign.png");
+  await writeFile(otherImage, await readFile(join(a, "scenes", "red.png")));
+  const imagePath = relative(join(a, "scenes"), otherImage).split(sep).join("/");
+  await writeFile(join(a, "scenes", "other-image.json"), JSON.stringify({ scenes: [{ image: imagePath, durationSeconds: 1 }] }));
+  const deniedImage = await callA("tools/call", { name: "advance-video-pipe_render_scene_plan", arguments: { plan_path: "scenes/other-image.json" } });
+  assert.equal(deniedImage.isError, true);
+  assert.match(deniedImage.content[0].text, /outside the scene plan directory/);
+  assert.deepEqual((await callA("resources/list")).resources, []);
   const ok = await callA("tools/call", { name: "advance-video-pipe_render_scene_plan", arguments: { plan_path: "scenes/plan.json" } });
   assert.equal(ok.isError, undefined, JSON.stringify(ok));
   const foreign = await callB("resources/read", { uri: ok.structuredContent.artifact });
-  assert.ok(foreign.error);
-  assert.match(foreign.error.message, /selected workspace/);
+  assert.equal(foreign.error.code, -32002);
+  const localName = (await callA("resources/list")).resources[0].name;
+  await rm(join(a, ".advance-video-pipe", "artifacts", localName));
+  const deleted = await callA("resources/read", { uri: ok.structuredContent.artifact });
+  assert.deepEqual(foreign.error, deleted.error);
+  assert.match(deleted.error.message, /selected workspace/);
   assert.deepEqual((await callB("resources/list")).resources, []);
+});
+
+it("returns JSON-RPC errors for malformed resource requests and storage failures", async t => {
+  const root = await mkdtemp(join(workspaceDir, "resource-errors-"));
+  const call = await client(t, root);
+  for (const params of [{}, { uri: "invalid" }, { uri: "advance-video-pipe://workspace/bad/name" }]) {
+    const response = await call("resources/read", params);
+    assert.equal(response.error.code, -32602);
+  }
+  await writeFile(join(root, ".advance-video-pipe"), "unavailable storage");
+  const listing = await call("resources/list");
+  assert.equal(listing.error.code, -32603);
+  assert.equal(listing.error.message.includes(root), false);
 });
 
 it("returns tool errors and publishes no artifact for a failed render", { skip: !haveFFmpeg }, async t => {

@@ -54,18 +54,28 @@ function artifactUri(scope, name) {
   return `advance-video-pipe://workspace/${scope}/${name}`;
 }
 
+export class VideoResourceError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.code = code;
+  }
+
+  static notFound() {
+    return new VideoResourceError(-32002, "Video artifact not found in the selected workspace");
+  }
+}
+
 function parseArtifactUri(uri, scope) {
-  if (typeof uri !== "string") throw new Error("Artifact URI must be a string");
+  if (typeof uri !== "string") throw new VideoResourceError(-32602, "Artifact URI must be a string");
   let parsed;
-  try { parsed = new URL(uri); } catch { throw new Error("Invalid video artifact URI"); }
+  try { parsed = new URL(uri); } catch { throw new VideoResourceError(-32602, "Invalid video artifact URI"); }
   if (parsed.protocol !== "advance-video-pipe:" || parsed.host !== "workspace" ||
       parsed.search || parsed.hash || parsed.username || parsed.password || parsed.port) {
-    throw new Error("Invalid video artifact URI");
+    throw new VideoResourceError(-32602, "Invalid video artifact URI");
   }
   const match = /^\/([0-9a-f]{20})\/(.+)$/.exec(parsed.pathname);
-  if (!match || match[1] !== scope || !ARTIFACT_NAME.test(match[2])) {
-    throw new Error("Video artifact does not belong to the selected workspace");
-  }
+  if (!match || !ARTIFACT_NAME.test(match[2])) throw new VideoResourceError(-32602, "Invalid video artifact URI");
+  if (match[1] !== scope) throw VideoResourceError.notFound();
   return match[2];
 }
 
@@ -100,10 +110,9 @@ export async function readWorkspaceVideo(uri) {
   const name = parseArtifactUri(uri, scope);
   const folder = await artifactDirectory(root);
   const filename = join(folder, name);
-  const file = await lstat(filename).catch(() => { throw new Error("Video artifact not found in the selected workspace"); });
-  if (!file.isFile()) throw new Error("Video artifact must be a regular file");
-  const handle = await open(filename, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
-    .catch(() => { throw new Error("Video artifact could not be opened in the selected workspace"); });
+  const file = await lstat(filename);
+  if (!file.isFile()) throw VideoResourceError.notFound();
+  const handle = await open(filename, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
     const info = await handle.stat();
     if (!info.isFile() || info.size < 1 || info.size > MAX_READ_BYTES) {
