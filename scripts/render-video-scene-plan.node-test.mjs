@@ -75,7 +75,7 @@ it("validates the plan, dimensions, image names and frame budget before encoding
     [{ scenes: [] }, /between 1 and 12/],
     [{ scenes: Array(13).fill(scene("a.png")) }, /between 1 and 12/],
     [{ width: 15, scenes: [scene("a.png")] }, /even dimensions/],
-    [{ scenes: [scene("https:\/\/example.invalid/img.png")] }, /relative PNG or JPEG/],
+    [{ scenes: [scene("https://example.invalid/img.png")] }, /relative PNG or JPEG/],
     [{ scenes: [scene("a.svg")] }, /relative PNG or JPEG/],
     [{ scenes: [scene("a.png", "1")] }, /durationSeconds/],
     [{ scenes: [scene("a.png", 0.01)] }, /durationSeconds/],
