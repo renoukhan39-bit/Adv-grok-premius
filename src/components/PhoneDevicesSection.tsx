@@ -143,7 +143,6 @@ export function deriveCompanionPanelStatus(
 ): CompanionPanelStatus | null {
   if (state.error) return { label: t("remote.status.attention"), good: false };
   if (!companionRoutesOn(state)) return { label: t("remote.status.off"), good: false };
-  const subscription = companionAccountBridge()?.subscription;
   const pairedCount = state.devices.length;
   if (!pairedCount) return null;
   return {
@@ -435,6 +434,7 @@ export function PhoneDevicesSection({ profileEmail = "", focusRequest = 0, simpl
   }
 
   const pairedCount = state.devices.length;
+  const subscription = companionAccountBridge()?.subscription;
   const accountActionError = companionAccountActionError(c.account, c.accountError);
   const tailscaleStatus = deriveTailscalePairingStatus(state);
   const tailscaleOn = state.routes?.tailscale?.on === true;
