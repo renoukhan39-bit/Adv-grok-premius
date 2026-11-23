@@ -4,6 +4,7 @@
 import readline from "node:readline";
 import { allowedServerOrigin, EXAMPLE_ADDRESS } from "../electron/server-address.mjs";
 import { isRecord, projectMessage } from "./mcp-message-projection.ts";
+import { listWorkspaceVideos, readWorkspaceVideo, renderWorkspaceVideo } from "./advance-video-pipe.mjs";
 
 /** A server's base URL: https anywhere, http only on loopback or a private network (LAN, Tailscale). */
 export function validateBaseUrl(url: string): string {
@@ -151,6 +152,19 @@ const DESTRUCTIVE = { readOnlyHint: false, destructiveHint: true, idempotentHint
 const AGENT_ACTION = { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true } as const;
 
 export const TOOLS: McpToolDefinition[] = [
+  {
+    name: "advance-video-pipe_render_scene_plan",
+    description: "Render an authorized JSON scene plan from this MCP process's trusted local video workspace and return an artifact URI plus verified duration, width and height. Use resources/read to open the MP4. Only relative plan paths are accepted; never provide a host absolute path.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        plan_path: { type: "string", description: "Workspace-relative JSON scene plan, e.g. scenes/storyboard.json. The plan's PNG/JPEG images must stay inside its directory." },
+      },
+      required: ["plan_path"],
+      additionalProperties: false,
+    },
+    annotations: ADDITIVE,
+  },
   {
     name: "get_system_health",
     description: "Check whether the OpenMausBot server is reachable.",
@@ -800,6 +814,9 @@ export async function handleToolCall(
     : baseFetcher;
   validateToolArguments(name, args);
   switch (name) {
+    case "advance-video-pipe_render_scene_plan": {
+      return renderWorkspaceVideo(stringArg(args, "plan_path", { max: 512 }));
+    }
     case "get_system_health": {
       const res = await fetcher("/api/health");
       if (res?.app !== "openmausbot") throw new Error("The configured endpoint is not an OpenMausBot server");
@@ -1275,6 +1292,7 @@ export async function processMcpMessage(
         protocolVersion,
         capabilities: {
           tools: {},
+          resources: {},
         },
         serverInfo: {
           name: "openmausbot-mcp",
@@ -1292,6 +1310,19 @@ export async function processMcpMessage(
     if (method === "ping") {
       if (isNotification) return null;
       return formatResponse(id, {});
+    }
+
+    if (method === "resources/list") {
+      if (isNotification) return null;
+      return formatResponse(id, await listWorkspaceVideos());
+    }
+
+    if (method === "resources/read") {
+      if (isNotification) return null;
+      if (!isRecord(params) || typeof params.uri !== "string") {
+        return formatResponse(id, undefined, { code: -32602, message: "Invalid params: resources/read requires uri" });
+      }
+      return formatResponse(id, await readWorkspaceVideo(params.uri));
     }
 
     if (method === "tools/list") {
