@@ -7,7 +7,7 @@ import { createInterface } from "node:readline";
 import { after, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
-const mcp = fileURLToPath(new URL("./mcp-server.ts", import.meta.url));
+const mcp = process.env.OMB_TEST_VIDEO_MCP_ENTRY ?? fileURLToPath(new URL("./mcp-server.ts", import.meta.url));
 const verify = fileURLToPath(new URL("./verify-rendered-video.mjs", import.meta.url));
 const workspaceDir = await mkdtemp(join(tmpdir(), "video-pipe-mcp-"));
 const haveFFmpeg = ["ffmpeg", "ffprobe"].every(command => spawnSync(command, ["-version"], { stdio: "ignore" }).status === 0);

@@ -3,8 +3,10 @@
 // for external agents (Hermes, Claude Desktop, Cursor, etc.).
 import readline from "node:readline";
 import { allowedServerOrigin, EXAMPLE_ADDRESS } from "../electron/server-address.mjs";
-import { isRecord, projectMessage } from "./mcp-message-projection.ts";
-import { listWorkspaceVideos, readWorkspaceVideo, renderWorkspaceVideo, VideoResourceError } from "./advance-video-pipe.mjs";
+import { formatResponse, isRecord, projectMessage } from "./mcp-message-projection.ts";
+import { renderWorkspaceVideo } from "./advance-video-pipe.mjs";
+import { respondToVideoResource, videoRenderTool } from "./mcp-video-resources.ts";
+export { formatResponse };
 
 /** A server's base URL: https anywhere, http only on loopback or a private network (LAN, Tailscale). */
 export function validateBaseUrl(url: string): string {
@@ -152,19 +154,7 @@ const DESTRUCTIVE = { readOnlyHint: false, destructiveHint: true, idempotentHint
 const AGENT_ACTION = { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true } as const;
 
 export const TOOLS: McpToolDefinition[] = [
-  {
-    name: "advance-video-pipe_render_scene_plan",
-    description: "Render an authorized JSON scene plan from this MCP process's trusted local video workspace and return an artifact URI plus verified duration, width and height. Use resources/read to open the MP4. Only relative plan paths are accepted; never provide a host absolute path.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        plan_path: { type: "string", description: "Workspace-relative JSON scene plan, e.g. scenes/storyboard.json. The plan's PNG/JPEG images must stay inside its directory." },
-      },
-      required: ["plan_path"],
-      additionalProperties: false,
-    },
-    annotations: ADDITIVE,
-  },
+  { ...videoRenderTool, annotations: ADDITIVE },
   {
     name: "get_system_health",
     description: "Check whether the OpenMausBot server is reachable.",
@@ -1206,19 +1196,6 @@ export async function handleToolCall(
   }
 }
 
-export function formatResponse(id: string | number | null, result?: unknown, error?: { code?: number; message?: string }) {
-  const payload: Record<string, unknown> = { jsonrpc: "2.0", id: id ?? null };
-  if (error) {
-    payload.error = {
-      code: error.code ?? -32603,
-      message: error.message ?? "Internal error",
-    };
-  } else {
-    payload.result = result;
-  }
-  return JSON.stringify(payload);
-}
-
 const activeMcpRequests = new Map<string | number, AbortController>();
 const activeMcpControllers = new Set<AbortController>();
 
@@ -1312,17 +1289,9 @@ export async function processMcpMessage(
       return formatResponse(id, {});
     }
 
-    if (method === "resources/list") {
+    if (method === "resources/list" || method === "resources/read") {
       if (isNotification) return null;
-      return formatResponse(id, await listWorkspaceVideos());
-    }
-
-    if (method === "resources/read") {
-      if (isNotification) return null;
-      if (!isRecord(params) || typeof params.uri !== "string") {
-        return formatResponse(id, undefined, { code: -32602, message: "Invalid params: resources/read requires uri" });
-      }
-      return formatResponse(id, await readWorkspaceVideo(params.uri));
+      return respondToVideoResource(id, method, params);
     }
 
     if (method === "tools/list") {
@@ -1375,13 +1344,6 @@ export async function processMcpMessage(
   } catch (err: any) {
     if ((err?.name === "AbortError" || err?.message === "Request cancelled") && !isNotification) {
       return formatResponse(id, undefined, { code: -32800, message: "Request cancelled" });
-    }
-    if (!isNotification && (method === "resources/read" || method === "resources/list")) {
-      if (err instanceof VideoResourceError) return formatResponse(id, undefined, err);
-      if (method === "resources/read" && err?.code === "ENOENT") {
-        return formatResponse(id, undefined, VideoResourceError.notFound());
-      }
-      return formatResponse(id, undefined, { code: -32603, message: "Could not access video resources in the selected workspace" });
     }
     log(`Error handling ${method}: ${err?.message || err}`);
     if (err instanceof ToolInputError && !isNotification) {

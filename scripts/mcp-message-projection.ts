@@ -74,3 +74,16 @@ export function projectMessage(message: Record<string, any>) {
     ...(message.kind === "screen" ? { hasImage: Boolean(message.hasImage || message.png) } : {}),
   };
 }
+
+export function formatResponse(id: string | number | null, result?: unknown, error?: { code?: number; message?: string }) {
+  const payload: Record<string, unknown> = { jsonrpc: "2.0", id: id ?? null };
+  if (error) {
+    payload.error = {
+      code: error.code ?? -32603,
+      message: error.message ?? "Internal error",
+    };
+  } else {
+    payload.result = result;
+  }
+  return JSON.stringify(payload);
+}
