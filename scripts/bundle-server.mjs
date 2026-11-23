@@ -71,6 +71,7 @@ const ENTRY_POINTS = [
 
 await build({
   entryPoints: ENTRY_POINTS.map((entry) => join(server, entry)),
+  external: ["./render-video-scene-plan.mjs"],
   bundle: true,
   platform: "node",
   target: "node20",
@@ -92,6 +93,7 @@ await build({
 // users need no repository, TypeScript, pnpm or node_modules.
 await build({
   entryPoints: [join(root, "scripts", "mcp-server.ts")],
+  external: ["./render-video-scene-plan.mjs"],
   bundle: true,
   platform: "node",
   target: "node20",
@@ -101,6 +103,11 @@ await build({
   logLevel: "info",
   plugins: [serverLocalePlugin],
 });
+
+// The renderer invokes its sibling verifier with Node, including in the packaged MCP process.
+for (const name of ["render-video-scene-plan.mjs", "verify-rendered-video.mjs"]) {
+  copyFileSync(join(root, "scripts", name), join(root, "dist-server", name));
+}
 
 // `openmausbot serve --tunnel` spawns the connector guardian as its own
 // process, so it must exist as a file beside the server.

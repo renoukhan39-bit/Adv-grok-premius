@@ -234,6 +234,15 @@ if (listening) {
   } catch (error) {
     mcpReport = { exit, stdout, stderr, error: String(error) };
   }
+  try {
+    await promisify(execFile)(process.execPath, ["--test", join(root, "scripts", "advance-video-pipe.node-test.mjs")], {
+      cwd: staging,
+      env: { ...fixtureEnv, TMPDIR: home, TMP: home, TEMP: home, OMB_TEST_VIDEO_MCP_ENTRY: join(staging, "server", "mcp-server.js") },
+      timeout: 120_000,
+    });
+  } catch (error) {
+    mcpReport.error = `Packaged video MCP fixture failed: ${error.stdout || error.message}`;
+  }
 }
 
 // The published command's headless verbs run from the bundle too: doctor
