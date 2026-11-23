@@ -96,7 +96,7 @@ jobs:
   publish-npm:
     name: publish to npm
     needs: pack-and-prove
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: vars.OMB_PUBLISH_NPM == '1' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -114,7 +114,7 @@ jobs:
       # OIDC token, so no registry token is stored
       # anywhere and no one-time password is asked for. One-time setup on
       # npmjs.com: package → Settings → Publishing access → GitHub Actions,
-      # owner milind-soni, repository OpenMausBot, workflow npm-package.yml.
+      # use this repository's owner and name and workflow npm-package.yml.
       # Needs npm ≥ 11.5 (Node 24 ships it).
       - name: Publish to npm
         run: |
@@ -123,8 +123,10 @@ jobs:
 
   update-github-release:
     name: update GitHub release
-    needs: publish-npm
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [pack-and-prove, publish-npm]
+    if: >-
+      !cancelled() && needs.pack-and-prove.result == 'success'
+      && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -135,6 +137,7 @@ jobs:
           name: npm-package
           path: release/npm
       - name: Note the npm package on the GitHub release
+        if: needs.publish-npm.result == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

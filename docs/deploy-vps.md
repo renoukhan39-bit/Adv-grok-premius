@@ -8,13 +8,15 @@ From a blank Linux server to OpenMausBot running on it around the clock, reachab
 
 ## Quick start: one command on your own domain
 
+The installer needs a published Adv-grok-premius server image. To build from your checkout, use [Path B](#path-b-your-own-domain-with-docker).
+
 For a fresh Ubuntu 22.04 or 24.04 server (x86-64, at least 2 CPUs, 4 GB of memory and 20 GB of free disk) and a domain name whose A record already points at it:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/milind-soni/OpenMausBot/main/deploy/install.sh | sudo sh -s -- --domain maus.example.com
+curl -fsSL https://raw.githubusercontent.com/renoukhan39-bit/Adv-grok-premius/main/deploy/install.sh | sudo sh -s -- --domain maus.example.com
 ```
 
-The installer ([`deploy/install.sh`](https://github.com/milind-soni/OpenMausBot/blob/main/deploy/install.sh)) does path B below for you and ends with MausBot answering at `https://maus.example.com`.
+The installer ([`deploy/install.sh`](https://github.com/renoukhan39-bit/Adv-grok-premius/blob/main/deploy/install.sh)) does path B below for you and ends with MausBot answering at `https://maus.example.com`.
 
 **It checks the server first, and changes nothing while it checks.** Each check that fails prints one sentence saying what to fix, and nothing is installed until all pass:
 
@@ -36,7 +38,7 @@ The installer ([`deploy/install.sh`](https://github.com/milind-soni/OpenMausBot/
 To run only the checks, add `--check`:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/milind-soni/OpenMausBot/main/deploy/install.sh | sudo sh -s -- --check --domain maus.example.com
+curl -fsSL https://raw.githubusercontent.com/renoukhan39-bit/Adv-grok-premius/main/deploy/install.sh | sudo sh -s -- --check --domain maus.example.com
 ```
 
 If Docker is missing, the installer asks before installing it with Docker's official script (`get.docker.com`); `--install-docker` says yes ahead of time. It installs nothing else on the server.
@@ -184,20 +186,22 @@ The [installer](#quick-start-one-command-on-your-own-domain) does these steps fo
 3. **Get the deploy files and set the name:**
 
    ```sh
-   git clone https://github.com/milind-soni/OpenMausBot && cd OpenMausBot/deploy
+   git clone https://github.com/renoukhan39-bit/Adv-grok-premius && cd Adv-grok-premius/deploy
    cp .env.example .env
    nano .env                # DOMAIN=maus.example.com ; ENGINES=@anthropic-ai/claude-code @openai/codex
    ```
 
    `ENGINES` lists the engine CLIs baked into your image, separated by spaces. Change it later and rebuild if you add one.
 
-4. **Start it:**
+4. **Build and start it:**
 
    ```sh
-   docker compose pull omb && docker compose up -d
-   ./update.sh              # move to the stable version (see "Update")
+   printf '\nOMB_IMAGE=openmausbot-local:latest\n' >> .env
+   docker compose up -d --build
    docker compose ps        # omb "healthy", caddy "running"
    ```
+
+   Alternatively, set `OMB_IMAGE` to a version published by Adv-grok-premius in `.env`, then run `docker compose pull omb && docker compose up -d`.
 
    Caddy requests the certificate on its own; give it a minute. Then `https://maus.example.com` shows a page asking for a pairing code. That is correct: nothing works until you pair.
 
@@ -342,7 +346,7 @@ same release without an npm install prompt or an implicit upgrade.
 
 A self-hosted server follows the **stable** channel: a released version that
 MausBot's own Clouds have run for 48 hours first. The image tag `stable` and
-[`stable.json`](https://raw.githubusercontent.com/milind-soni/OpenMausBot/channels/stable.json)
+[`stable.json`](https://raw.githubusercontent.com/renoukhan39-bit/Adv-grok-premius/channels/stable.json)
 name it. The tag `latest` follows every change on `main`; it is for trying
 things out, not for a server you rely on. **Check for updates** in the app
 compares your server with the stable version. To hear of every release as soon
@@ -472,7 +476,7 @@ has no checkout, with its `compose.yaml`, `.env` and `data/` in one folder such
 as `/opt/openmausbot`, runs the same script on that folder:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/milind-soni/OpenMausBot/main/deploy/update.sh -o update.sh
+curl -fsSL https://raw.githubusercontent.com/renoukhan39-bit/Adv-grok-premius/main/deploy/update.sh -o update.sh
 sudo bash update.sh --dir /opt/openmausbot
 ```
 
@@ -499,7 +503,7 @@ every file's owner and mode either way. The script then:
    changed. The copy from the update before is removed only after this one
    has matched. The server is down from here until step 4; how long depends
    on how much data there is.
-3. Writes the image into `.env` (`OMB_IMAGE=ghcr.io/milind-soni/openmausbot@sha256:…`)
+3. Writes the image into `.env` (`OMB_IMAGE=ghcr.io/renoukhan39-bit/adv-grok-premius@sha256:…`)
    and starts it. An install the installer made while Caddy still shared the
    server's network gets the installer's current `compose.yaml` and
    `Caddyfile` here, as a run of the installer would write them (the rollback
@@ -610,7 +614,7 @@ is saved alongside the backup. Update between runs to avoid interrupting work.
 #### Manual update
 
 For a custom unit, apply the same steps by hand. Take the stable version number from
-[`stable.json`](https://raw.githubusercontent.com/milind-soni/OpenMausBot/channels/stable.json)
+[`stable.json`](https://raw.githubusercontent.com/renoukhan39-bit/Adv-grok-premius/channels/stable.json)
 (`"version"`), and note the one you run now (`openmausbot --version`). From
 the administrator shell, replacing `X.Y.Z`:
 

@@ -30,7 +30,10 @@ describe("packaged native modules", () => {
     const checkout = mkdtempSync(join(tmpdir(), "omb-npm-package-"));
     temporaryDirectories.push(checkout);
     const pins = Object.fromEntries(nativelyRequired().map((name, i) => [name, `9.9.${i}`]));
-    writeFileSync(join(checkout, "package.json"), JSON.stringify({ version: "0.0.1", dependencies: { ...pins, react: "19.0.0" } }));
+    const homepage = "https://example.com/standalone";
+    const repositoryUrl = "https://github.com/example/standalone";
+    const repository = { type: "git", url: `${repositoryUrl}.git` };
+    writeFileSync(join(checkout, "package.json"), JSON.stringify({ version: "0.0.1", homepage, repository, dependencies: { ...pins, react: "19.0.0" } }));
     for (const file of ["dist-server/index.js", "dist-server/openmausbot.js", "dist/index.html", "LICENSE"]) {
       mkdirSync(join(checkout, file, ".."), { recursive: true });
       writeFileSync(join(checkout, file), "");
@@ -40,6 +43,9 @@ describe("packaged native modules", () => {
     execFileSync(process.execPath, [join(checkout, "scripts", "build-npm-package.mjs")], { stdio: "pipe" });
     const manifest = JSON.parse(readFileSync(join(checkout, "release", "npm", "package.json"), "utf8"));
     expect(manifest.dependencies).toEqual(pins);
+    expect(manifest.repository).toEqual(repository);
+    expect(manifest.homepage).toBe(homepage);
+    expect(readFileSync(join(checkout, "release", "npm", "README.md"), "utf8")).toContain(`${repositoryUrl}/blob/main/docs/self-hosting.md`);
   });
 
   it("stages the native tree in the Podman image where the server looks for it", () => {

@@ -10,6 +10,7 @@ import {
 import { isAbsolute, join, relative, resolve, sep, win32 } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { browserBundlePaths, browserBundleSpec } from "../server/browser-bundle-release.ts";
+import { agentBrowserVendorFile } from "../server/browser-engine-release.ts";
 import { executableTarget } from "./prepare-cloudflared.mjs";
 
 export const BROWSER_LICENSE_FILES = [
@@ -104,6 +105,12 @@ export function verifyBrowserBundle(directory, target) {
 }
 
 export async function releaseBytes(asset, cacheDirectory) {
+  const vendored = agentBrowserVendorFile(asset);
+  if (vendored && existsSync(vendored)) {
+    const bytes = readFileSync(vendored);
+    verifyAssetBytes(bytes, asset);
+    return bytes;
+  }
   const cached = cacheDirectory && join(cacheDirectory, asset.asset);
   if (cached && existsSync(cached)) {
     try {

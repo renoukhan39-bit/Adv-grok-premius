@@ -71,7 +71,7 @@ chmod 755 "$home/.local/bin/npm"
 chown "$account:$account" "$home/.local/bin/npm"
 cat >/usr/sbin/curl <<'EOF'
 #!/bin/bash
-if [[ "${!#}" == https://raw.githubusercontent.com/milind-soni/OpenMausBot/channels/stable.json ]]; then
+if [[ "${!#}" == https://raw.githubusercontent.com/renoukhan39-bit/Adv-grok-premius/channels/stable.json ]]; then
   cat /var/lib/omb-npm-update-fixture/stable.json
 else
   exec /usr/bin/curl "$@"

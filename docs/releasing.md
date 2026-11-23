@@ -9,18 +9,13 @@ The existing **Actions → Release → Run workflow** button remains available f
 reruns and recovery. It
 builds macOS (arm64 + x64, signed, notarized, stapled), Windows, and Ubuntu
 from a single pinned commit, verifies every artifact the way a user would
-receive it, and assembles the canonical draft in
-[OpenMausBot releases](https://github.com/milind-soni/OpenMausBot/releases).
-The exact same assets are also staged in the public legacy releases repo so
-installed builds from 0.1.46 and earlier can update across the repository
-migration.
+receive it, and assembles the draft in
+[Adv-grok-premius releases](https://github.com/renoukhan39-bit/Adv-grok-premius/releases).
 
-Tick **publish** to publish and verify the canonical release first, then make
-the identical legacy updater bridge visible. Leave it unticked to review the
-canonical draft; when you publish that draft in GitHub's UI, the **Sync
-published release** workflow
-verifies and publishes its legacy mirror automatically. Never publish only the
-legacy draft.
+Tick **publish** to publish the verified release as soon as it is assembled.
+Leave it unticked to review the draft. Publishing in GitHub's UI starts
+**Verify published release**, which downloads the desktop assets and verifies
+their hashes.
 
 The release commit must have passed CI on every platform: the **CI passed on
 the release commit** job waits (while the platforms build) for a ci.yml run
@@ -37,12 +32,13 @@ wait, for emergencies only. See [CI job selection](ci.md#main-and-releases).
 
 The workflow refuses to overwrite an already-published version. Manual Release
 runs still require `package.json`'s version to be bumped on the selected ref.
+Choose an unused version for the first release so imported Git tags remain intact.
 A release is rejected if any installer, stable download
 name, updater feed, blockmap, size, or digest is absent or inconsistent.
 
 GitHub generates the release body from pull requests since the previous
-canonical tag. The docs changelog combines published canonical releases with
-the legacy archive into one complete history and caches it for five minutes.
+release tag. The docs changelog currently reads upstream release archives and
+caches them for five minutes.
 Configure the optional Vercel hook below to rebuild the docs immediately after
 publication; otherwise the live cache or the next normal docs deployment
 refreshes it.
@@ -78,8 +74,8 @@ The workflow builds nothing. It:
    and reads its digest and the Cloud home image's;
 3. refuses to move stable back to an older version unless `allow_older` is
    ticked;
-4. moves the `stable` tag of `ghcr.io/milind-soni/openmausbot` and of
-   `ghcr.io/milind-soni/openmausbot-cloud-home` to those digests;
+4. moves the `stable` tag of `ghcr.io/renoukhan39-bit/adv-grok-premius` and of
+   `ghcr.io/renoukhan39-bit/adv-grok-premius-cloud-home` to those digests;
 5. commits `stable.json` (version, both images by digest, and every version
    that was stable in the last 90 days) to the `channels` branch. When that
    fails after the tags moved, the tags are put back to the digests the
@@ -91,7 +87,7 @@ it stops the run, so a network error never skips the move-back check or drops
 the history.
 
 Servers read
-`https://raw.githubusercontent.com/milind-soni/OpenMausBot/channels/stable.json`:
+`https://raw.githubusercontent.com/renoukhan39-bit/Adv-grok-premius/channels/stable.json`:
 the update check (`server/update-check.ts`) for the version, and
 `deploy/update.sh` for the image to pull. `latest` still follows `main` and is
 never moved by this workflow. Running it again with the same version changes
@@ -126,23 +122,16 @@ held to the same steps and the same promises:
 this; `scripts/testing/deploy-update.test.ts` holds the script to it. A change
 to one side's steps belongs in the other too.
 
-## Updater migration invariant
+## Desktop update feed
 
-`app-update.yml` is baked into every packaged desktop app. Builds through
-0.1.46 point to `milind-soni/openmausbot-releases`; newer builds point to
-`milind-soni/OpenMausBot`. For that reason:
+Electron Builder embeds `app-update.yml` in each desktop build. These builds
+use the public `renoukhan39-bit/Adv-grok-premius` releases for update metadata
+and artifacts. Installations from historical upstream builds use the feed that
+was embedded in their original package.
 
-1. Every new release is published byte-for-byte to both repositories during
-   the bridge period.
-2. `openmausbot-releases` must stay public. Do not delete its final bridge
-   release, feeds, or assets.
-3. README and docs downloads point at the canonical repo, while the legacy
-   mirror exists only for installed updater clients and historical releases.
-
-The npm package is published separately and its versioned `.tgz` is attached
-only to the canonical release. It is not a desktop updater artifact; the
-mirror checks permit that one extra file while still verifying the complete,
-byte-identical desktop asset set.
+The npm package tarball attaches to the same GitHub release. Publishing it
+to the npm registry requires the repository variable `OMB_PUBLISH_NPM=1`
+and an npm trusted publisher grant for this repository.
 
 ## Why the gates exist
 
@@ -165,7 +154,7 @@ must fail the build, not ship an installer that downloads them on first use.
 
 ## One-time setup: release secrets
 
-Set these in **OpenMausBot → Settings → Secrets and variables → Actions**.
+Set these in **Adv-grok-premius → Settings → Secrets and variables → Actions**.
 
 The **Prepare next release** workflow also needs
 **Settings → Actions → General → Workflow permissions → Allow GitHub Actions
@@ -174,12 +163,11 @@ version PR; it never approves or merges it.
 
 ### 1. `MAC_CERT_P12_BASE64` + `MAC_CERT_PASSWORD`
 
-The Developer ID Application certificate, exported from the Mac that
-currently signs releases:
+Export the Developer ID Application certificate you use to sign releases:
 
 ```sh
-# Keychain Access → My Certificates → "Developer ID Application: Milind Soni
-# (993D98NH4J)" → right-click → Export… → .p12 with a strong password, then:
+# Keychain Access → My Certificates → Developer ID Application → Export.
+# Save as .p12 and set a strong password.
 base64 -i DeveloperID.p12 | pbcopy   # → MAC_CERT_P12_BASE64
 # the export password             → MAC_CERT_PASSWORD
 ```
@@ -197,16 +185,7 @@ password for CI — revocable, scoped, no 2FA dance):
 base64 -i AuthKey_XXXXXXXX.p8 | pbcopy   # → APPLE_API_KEY_P8_BASE64
 ```
 
-### 3. `RELEASES_PAT`
-
-A fine-grained personal access token that lets the workflow write to the
-legacy updater mirror: **GitHub → Settings → Developer settings →
-Fine-grained tokens** → repository access: only `openmausbot-releases` →
-permissions: **Contents: Read and write**. Set a long expiry and a calendar
-reminder. The canonical release uses the workflow's scoped `GITHUB_TOKEN` and
-does not need a PAT.
-
-### 4. Optional `DOCS_DEPLOY_HOOK_URL`
+### 3. Optional `DOCS_DEPLOY_HOOK_URL`
 
 In Vercel, open the docs project and create a **Deploy Hook** for its production
 branch. Store that private URL as the `DOCS_DEPLOY_HOOK_URL` repository secret.
@@ -219,7 +198,6 @@ The hand-cut path still works when Actions is down or a release needs
 surgery: `pnpm package:mac`, gate with `codesign --verify --deep --strict`,
 notarize with the local keychain profile (`xcrun notarytool submit …
 --keychain-profile AC_PASSWORD`), staple, re-zip, regenerate blockmaps and
-`node scripts/regenerate-mac-feed.mjs`, upload the identical complete asset set
-to both repositories, publish and verify the canonical release before the
-legacy mirror, and always verify the published bytes against the published feed
-by downloading them back.
+`node scripts/regenerate-mac-feed.mjs`, then upload the complete asset set to
+this repository's GitHub release. Download the published assets and verify
+their hashes against the published feed.

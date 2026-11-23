@@ -675,13 +675,13 @@ describe("finding the browser engine", () => {
     expect(asset).toEqual({
       target: "win32-x64", version: "0.36.0-omb.1",
       asset: "agent-browser-win32-x64-0.36.0-omb.1.exe",
-      url: "https://github.com/milind-soni/OpenMausBot/releases/download/browser-engine-v0.36.0-omb.1/agent-browser-win32-x64-0.36.0-omb.1.exe",
-      bytes: 13806080, sha256: "33bee834f6a6072ec8688b0914726e0262874d758f69f27e8baf7eaac6b5ed15",
+      url: "https://github.com/renoukhan39-bit/Adv-grok-premius/releases/download/browser-engine-v0.36.0-omb.1/agent-browser-win32-x64-0.36.0-omb.1.exe",
+      vendored: true, bytes: 13806080, sha256: "33bee834f6a6072ec8688b0914726e0262874d758f69f27e8baf7eaac6b5ed15",
     });
     expect(agentBrowserReleaseVersion(asset)).toBe("0.36.0-omb.1");
     expect(browserBundleSpec("win32-x64").engine).toEqual({
       version: asset.version, asset: asset.asset, url: asset.url,
-      bytes: asset.bytes, sha256: asset.sha256, executable: "agent-browser.exe",
+      vendored: true, bytes: asset.bytes, sha256: asset.sha256, executable: "agent-browser.exe",
     });
     for (const [platform, arch] of [["darwin", "arm64"], ["darwin", "x64"], ["linux", "arm64"], ["linux", "x64"]] as const) {
       expect(agentBrowserReleaseVersion(resolveAgentBrowserReleaseAsset(platform, arch))).toBe("0.37.0");
@@ -913,6 +913,17 @@ describe("installing the browser engine", () => {
     expect(fetched[0]).toBe(agentBrowserReleaseUrl(asset));
     expect(readFileSync(installed, "utf8")).toContain("agent-browser");
     if (posix) expect(statSync(installed).mode & 0o111).not.toBe(0);
+  });
+
+  it("installs the vendored Windows engine without a network request", async () => {
+    const dataDir = mkdtempSync(join(tmpdir(), "omb-engine-vendor-"));
+    scratch.push(dataDir);
+    const asset = resolveAgentBrowserReleaseAsset("win32", "x64")!;
+    const fetchImpl = vi.fn<typeof fetch>();
+    const installed = await installAgentBrowserBinary({ dataDir, platform: "win32", arch: "x64", fetchImpl });
+    expect(installed).toBe(pinnedBinaryPath(dataDir, "win32", "x64"));
+    expect(createHash("sha256").update(readFileSync(installed)).digest("hex")).toBe(asset.sha256);
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 
   it("refuses a download whose bytes do not match the pin, and leaves nothing behind", async () => {

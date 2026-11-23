@@ -1,5 +1,10 @@
 name: ${COMPOSE_PROJECT_NAME:-openmausbot}
 services:
+  omb-base:
+    scale: 0
+    build:
+      context: .
+      target: server
   omb:
     # Collects exited browser processes; Chrome's shared memory as on the
     # desktop containers (docs/browser-packaging.md, "Process hygiene").
@@ -7,8 +12,10 @@ services:
     shm_size: 512m
     build:
       context: ./deploy/local
+      additional_contexts:
+        omb-base: service:omb-base
       args:
-        BASE_IMAGE: ${OMB_BASE_IMAGE:-ghcr.io/milind-soni/openmausbot:latest}
+        BASE_IMAGE: ${OMB_BASE_IMAGE:-omb-base}
         ENGINES: ${ENGINES-@anthropic-ai/claude-code @openai/codex}
     image: ${OMB_LOCAL_IMAGE:-openmausbot-local:latest}
     restart: unless-stopped

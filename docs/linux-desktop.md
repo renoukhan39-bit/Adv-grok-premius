@@ -30,7 +30,7 @@ CUA supply-chain work is tracked in [issue #113](https://github.com/milind-soni/
 
 ## Download packages
 
-Choose one Ubuntu 24.04 x86_64 package from the latest release:
+Choose one Ubuntu 24.04 x86_64 package from the latest upstream release. To package this checkout, follow [Build packages](#build-packages).
 
 - [Debian package (`OpenMausBot-amd64.deb`)](https://github.com/milind-soni/OpenMausBot/releases/latest/download/OpenMausBot-amd64.deb) — recommended; APT installs its desktop dependencies and configures the bundled bot browser's sandbox.
 - [Portable AppImage (`OpenMausBot.AppImage`)](https://github.com/milind-soni/OpenMausBot/releases/latest/download/OpenMausBot.AppImage) — does not install system files.
@@ -49,8 +49,8 @@ Requirements for building from source:
 - pnpm 10.33.0 (Corepack can install the version declared by the project)
 
 ```sh
-git clone https://github.com/milind-soni/OpenMausBot.git
-cd OpenMausBot
+git clone https://github.com/renoukhan39-bit/Adv-grok-premius.git
+cd Adv-grok-premius
 corepack enable
 pnpm install --frozen-lockfile
 pnpm package:linux

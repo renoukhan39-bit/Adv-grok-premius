@@ -37,10 +37,10 @@ umask 022
 # update half-way. Output to a terminal that has gone is lost; .update/update.log keeps it.
 trap '' HUP PIPE
 
-REPO="ghcr.io/milind-soni/openmausbot"
-PINNED="^ghcr\.io/milind-soni/openmausbot@sha256:[0-9a-f]{64}$"
-STABLE_URL=${OMB_STABLE_URL:-https://raw.githubusercontent.com/milind-soni/OpenMausBot/channels/stable.json}
-NEWEST_URL=${OMB_NEWEST_URL:-https://api.github.com/repos/milind-soni/OpenMausBot/releases/latest}
+REPO="ghcr.io/renoukhan39-bit/adv-grok-premius"
+PINNED="^ghcr\.io/renoukhan39-bit/adv-grok-premius@sha256:[0-9a-f]{64}$"
+STABLE_URL=${OMB_STABLE_URL:-https://raw.githubusercontent.com/renoukhan39-bit/Adv-grok-premius/channels/stable.json}
+NEWEST_URL=${OMB_NEWEST_URL:-https://api.github.com/repos/renoukhan39-bit/Adv-grok-premius/releases/latest}
 SERVICE=${OMB_UPDATE_SERVICE:-omb}
 # A healthy server answers within seconds of starting; two minutes leaves room for a slow first start after an update,
 # and is how long the server is down before a version that never answers is rolled back. OMB_UPDATE_WAIT_S for more.

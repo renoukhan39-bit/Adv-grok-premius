@@ -19,6 +19,7 @@ import {
   AGENT_BROWSER_VERSION,
   agentBrowserReleaseUrl,
   agentBrowserReleaseVersion,
+  agentBrowserVendorFile,
   resolveAgentBrowserReleaseAsset,
   type AgentBrowserReleaseAsset,
 } from "./browser-engine-release.ts";
@@ -412,30 +413,18 @@ export function resolveAgentBrowserBinary(options: BrowserLookupOptions = {}): s
   return onPath(env, platform, exists);
 }
 
-/** Verifies size and SHA-256 before the file gets its final name. */
-export async function installAgentBrowserBinary(options: {
-  dataDir?: string;
-  platform?: NodeJS.Platform;
-  arch?: string;
-  musl?: boolean;
-  asset?: AgentBrowserReleaseAsset;
-  fetchImpl?: typeof fetch;
-  log?: (line: string) => void;
-} = {}): Promise<string> {
-  const platform = options.platform ?? process.platform;
-  const asset = options.asset ?? resolveAgentBrowserReleaseAsset(platform, options.arch ?? process.arch, options.musl ?? isMusl(platform));
-  if (!asset) throw new Error(`agent-browser publishes no build for ${platform}-${options.arch ?? process.arch}.`);
-  const destination = pinnedBinaryPath(options.dataDir, platform, options.arch);
-  const directory = join(destination, "..");
-  mkdirSync(directory, { recursive: true, mode: 0o700 });
+async function downloadAgentBrowserBinary(
+  asset: AgentBrowserReleaseAsset,
+  fetchImpl: typeof fetch,
+  log?: (line: string) => void,
+): Promise<Buffer> {
   const url = agentBrowserReleaseUrl(asset);
-  options.log?.(`downloading agent-browser ${agentBrowserReleaseVersion(asset)} (${Math.round(asset.bytes / 1024 / 1024)} MB, digest pinned)`);
+  log?.(`downloading agent-browser ${agentBrowserReleaseVersion(asset)} (${Math.round(asset.bytes / 1024 / 1024)} MB, digest pinned)`);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
   timer.unref?.();
-  let body: Buffer;
   try {
-    const response = await (options.fetchImpl ?? fetch)(url, { redirect: "follow", signal: controller.signal });
+    const response = await fetchImpl(url, { redirect: "follow", signal: controller.signal });
     if (!response.ok) throw new Error(`the agent-browser download failed (HTTP ${response.status})`);
     const declared = Number(response.headers.get("content-length") ?? NaN);
     if (Number.isFinite(declared) && declared !== asset.bytes) throw new Error("the agent-browser download did not match its pinned size; nothing was installed");
@@ -452,14 +441,36 @@ export async function installAgentBrowserBinary(options: {
       } catch (error) {
         if (received <= asset.bytes) throw error;
       }
-      body = Buffer.concat(chunks);
-    } else {
-      body = Buffer.from(await response.arrayBuffer());
-      if (body.length > asset.bytes) controller.abort();
+      return Buffer.concat(chunks);
     }
+    const body = Buffer.from(await response.arrayBuffer());
+    if (body.length > asset.bytes) controller.abort();
+    return body;
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** Verifies size and SHA-256 before the file gets its final name. */
+export async function installAgentBrowserBinary(options: {
+  dataDir?: string;
+  platform?: NodeJS.Platform;
+  arch?: string;
+  musl?: boolean;
+  asset?: AgentBrowserReleaseAsset;
+  fetchImpl?: typeof fetch;
+  log?: (line: string) => void;
+} = {}): Promise<string> {
+  const platform = options.platform ?? process.platform;
+  const asset = options.asset ?? resolveAgentBrowserReleaseAsset(platform, options.arch ?? process.arch, options.musl ?? isMusl(platform));
+  if (!asset) throw new Error(`agent-browser publishes no build for ${platform}-${options.arch ?? process.arch}.`);
+  const destination = pinnedBinaryPath(options.dataDir, platform, options.arch);
+  const directory = join(destination, "..");
+  mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const vendored = agentBrowserVendorFile(asset);
+  const body = vendored && existsSync(vendored)
+    ? readFileSync(vendored)
+    : await downloadAgentBrowserBinary(asset, options.fetchImpl ?? fetch, options.log);
   if (body.length !== asset.bytes) throw new Error("the agent-browser download did not match its pinned size; nothing was installed");
   const digest = createHash("sha256").update(body).digest("hex");
   if (digest !== asset.sha256) throw new Error("the agent-browser download failed its SHA-256 check; nothing was installed");

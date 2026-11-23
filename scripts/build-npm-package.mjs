@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const out = join(root, "release", "npm");
 const app = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+const docs = `${app.repository.url.replace(/\.git$/, "")}/blob/main/docs`;
 
 for (const required of ["dist-server/index.js", "dist-server/openmausbot.js", "dist/index.html"]) {
   if (!existsSync(join(root, required))) {
@@ -60,8 +61,8 @@ writeFileSync(
       },
       files: ["cli.js", "dist-server", "dist", "skills", "enterprise", "LICENSE", "README.md"],
       engines: { node: ">=24" },
-      repository: { type: "git", url: "https://github.com/milind-soni/OpenMausBot.git" },
-      homepage: "https://github.com/milind-soni/OpenMausBot#readme",
+      repository: app.repository,
+      homepage: app.homepage,
       keywords: ["openmausbot", "agents", "self-hosted", "server"],
     },
     null,
@@ -158,9 +159,9 @@ openmausbot run "Room Lead" "Rehearse the launch of https://example.com" --expor
 openmausbot help run       # every verb: doctor, run, wait, send, export, events, team, engine, connect, mcp
 \`\`\`
 
-[Setup guide](https://github.com/milind-soni/OpenMausBot/blob/main/docs/cli-onboarding.md)
-· [Scripts and CI](https://github.com/milind-soni/OpenMausBot/blob/main/docs/headless-cli.md)
-· [Hosting guide](https://github.com/milind-soni/OpenMausBot/blob/main/docs/self-hosting.md)
+[Setup guide](${docs}/cli-onboarding.md)
+· [Scripts and CI](${docs}/headless-cli.md)
+· [Hosting guide](${docs}/self-hosting.md)
 `,
 );
 console.log(`npm package assembled at ${out} (openmausbot@${app.version})`);

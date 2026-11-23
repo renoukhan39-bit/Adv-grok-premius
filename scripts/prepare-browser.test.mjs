@@ -66,6 +66,15 @@ describe("pinned desktop browser preparation", () => {
     expect(browserExtractionCommand("a.zip", "out", { platform: "darwin" })).toEqual({ file: "unzip", args: ["-q", "a.zip", "-d", "out"] });
   });
 
+  it("reads and verifies the vendored Windows engine without a network request", async () => {
+    const { engine } = browserBundleSpec("win32-x64");
+    const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
+    const bytes = await releaseBytes(engine, fixture());
+    expect(bytes).toHaveLength(engine.bytes);
+    await expect(releaseBytes({ ...engine, sha256: "0".repeat(64) })).rejects.toThrow(/SHA-256/);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("repairs a tampered cache by re-downloading and fails closed on a bad download", async () => {
     const root = fixture();
     const bytes = Buffer.from("reviewed fixture");

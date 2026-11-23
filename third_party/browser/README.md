@@ -56,7 +56,16 @@ Preparation checks the exact archive bytes on every run, including cached
 downloads, then records a complete file/symlink inventory. Missing, modified,
 or incomplete staged resources fail the pre-signing package check.
 
-Archives and extracted binaries are generated build output, not git content.
+The reviewed Windows `0.36.0-omb.1` executable is stored in
+`third_party/browser-binaries/agent-browser-win32-x64-0.36.0-omb.1.exe`.
+Its original release was published in
+[OpenMausBot's browser-engine artifacts](https://github.com/milind-soni/OpenMausBot/releases/tag/browser-engine-v0.36.0-omb.1).
+The file matches the pinned 13,806,080 bytes and SHA-256
+`33bee834f6a6072ec8688b0914726e0262874d758f69f27e8baf7eaac6b5ed15`.
+The application verifies these pins when staging it for packaging or managed
+installation. The notices above apply to the vendored copy.
+
+Other archives and extracted binaries are generated build output.
 Set `OMB_BROWSER_ARCHIVE_DIR` to a directory of reviewed vendor assets for an
 offline build; cached bytes are still verified. Browser dependencies are
 updated through reviewed OpenMausBot releases, not a silent browser updater.

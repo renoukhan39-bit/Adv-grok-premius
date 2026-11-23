@@ -68,7 +68,7 @@ jobs:
           echo "current=$current" >> "$GITHUB_OUTPUT"
           echo "next=$next" >> "$GITHUB_OUTPUT"
 
-      - name: Refuse an existing release or release branch
+      - name: Refuse an existing release, tag, or release branch
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.next }}
@@ -77,8 +77,8 @@ jobs:
             echo "::error::v$VERSION already exists in $GITHUB_REPOSITORY"
             exit 1
           fi
-          if gh release view "v$VERSION" --repo milind-soni/openmausbot-releases > /dev/null 2>&1; then
-            echo "::error::v$VERSION already exists in the legacy updater mirror"
+          if git show-ref --verify --quiet "refs/tags/v$VERSION"; then
+            echo "::error::v$VERSION already exists as a Git tag"
             exit 1
           fi
           if git ls-remote --exit-code --heads origin "release/v$VERSION" > /dev/null 2>&1; then

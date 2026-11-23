@@ -16,7 +16,7 @@ Talk to them like contacts. Watch them work. Approve what matters.
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![Electron](https://img.shields.io/badge/Electron-macOS%20%C2%B7%20Windows%20%C2%B7%20Ubuntu-2B2E3A?logo=electron&logoColor=9FEAF9)
 ![Agents](https://img.shields.io/badge/agents-Claude%20·%20Codex-d97757)
-[![Release](https://img.shields.io/github/v/release/milind-soni/OpenMausBot?label=release&color=1084fe&cacheSeconds=300)](https://github.com/milind-soni/OpenMausBot/releases/latest)
+[![Upstream release](https://img.shields.io/github/v/release/milind-soni/OpenMausBot?label=upstream%20release&color=1084fe&cacheSeconds=300)](https://github.com/milind-soni/OpenMausBot/releases/latest)
 ![PRs](https://img.shields.io/badge/PRs-welcome-38d591)
 
 <br>
@@ -37,7 +37,7 @@ Talk to them like contacts. Watch them work. Approve what matters.
   <img src="https://img.shields.io/github/v/release/milind-soni/OpenMausBot?style=for-the-badge&label=%E2%AC%87%EF%B8%8F%20%20Download%20for%20Ubuntu&labelColor=070707&color=e95420&cacheSeconds=300" alt="Download the latest OpenMausBot for Ubuntu (.deb)" height="40">
 </a>
 
-<sub>[latest release](https://github.com/milind-soni/OpenMausBot/releases/latest) &nbsp;·&nbsp; macOS: Apple silicon & Intel · signed & notarized .dmg &nbsp;·&nbsp; Windows: x64 installer &nbsp;·&nbsp; Ubuntu 24.04 x64: .deb or AppImage beta &nbsp;·&nbsp; Fedora x64: .rpm &nbsp;·&nbsp; [all releases](https://github.com/milind-soni/OpenMausBot/releases)</sub>
+<sub>[latest upstream release](https://github.com/milind-soni/OpenMausBot/releases/latest) &nbsp;·&nbsp; macOS: Apple silicon & Intel · signed & notarized .dmg &nbsp;·&nbsp; Windows: x64 installer &nbsp;·&nbsp; Ubuntu 24.04 x64: .deb or AppImage beta &nbsp;·&nbsp; Fedora x64: .rpm &nbsp;·&nbsp; [all upstream releases](https://github.com/milind-soni/OpenMausBot/releases)</sub>
 
 <br>
 
@@ -337,7 +337,7 @@ See [Run OpenMausBot from scripts and CI](docs/headless-cli.md).
 
 ## Quick start
 
-**Released builds ([latest release](https://github.com/milind-soni/OpenMausBot/releases/latest)):** the harness server is embedded, so no separate server setup is required.
+**Upstream builds ([latest upstream release](https://github.com/milind-soni/OpenMausBot/releases/latest))** embed the harness server. Use the source instructions below to run Adv-grok-premius.
 
 | | Download | Install |
 |---|---|---|
@@ -354,7 +354,7 @@ Any desktop build can also open the bots of another Windows, macOS, or Ubuntu co
 **From source:**
 
 ```sh
-git clone https://github.com/milind-soni/OpenMausBot && cd OpenMausBot
+git clone https://github.com/renoukhan39-bit/Adv-grok-premius && cd Adv-grok-premius
 pnpm install
 
 pnpm dev:server    # harness server → 127.0.0.1:8799
@@ -491,7 +491,7 @@ and maintenance; OpenMausBot remains free and open source.
 
 ## Run from a terminal or on a server
 
-With Node 24 or newer, install once and run:
+With Node 24 or newer, run this checkout's CLI with `pnpm omb` after the source setup above. The upstream OpenMausBot package is available on npm:
 
 ```sh
 npm install -g openmausbot

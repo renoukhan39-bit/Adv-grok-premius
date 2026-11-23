@@ -355,6 +355,16 @@ describe("container images", () => {
     expect(resolve(false)).toEqual({ chrome: today, chromium: today, engines: "@anthropic-ai/claude-code @openai/codex", engines_tag: today });
   });
 
+  it("builds the local Compose server base from this checkout", () => {
+    const { services } = parse(readFileSync(new URL("../compose.yaml", import.meta.url), "utf8"));
+    expect(services["omb-base"]).toMatchObject({ scale: 0, build: { context: ".", target: "server" } });
+    expect(services.omb.build).toMatchObject({
+      context: "./deploy/local",
+      additional_contexts: { "omb-base": "service:omb-base" },
+      args: { BASE_IMAGE: "${OMB_BASE_IMAGE:-omb-base}" },
+    });
+  });
+
   // An init collects browser processes whose parents exit, and Chrome gets the
   // shared memory OpenMausBot's desktop containers give it.
   it("runs every compose service of the server image with an init and Chrome's shared memory", () => {

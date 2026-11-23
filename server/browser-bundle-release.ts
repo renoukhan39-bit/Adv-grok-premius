@@ -33,6 +33,7 @@ export function browserBundleSpec(target: string) {
       version: agentBrowserReleaseVersion(engine),
       asset: engine.asset,
       url: agentBrowserReleaseUrl(engine),
+      ...(engine.vendored ? { vendored: true } : {}),
       bytes: engine.bytes,
       sha256: engine.sha256,
       executable: `agent-browser${suffix}`,

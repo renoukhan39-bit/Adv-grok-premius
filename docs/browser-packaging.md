@@ -334,9 +334,13 @@ the normal application packaging workflow consumes it. Candidate testing does
 not replace the packaged-app tests. Published vendor bytes must not be
 overwritten; a changed build needs a new revision and reviewed pins.
 
-The Windows revision has a separate managed installation directory so an old
-0.36.0 download is not mistaken for the patched engine. Desktop packages use
-their bundled engine. Explicit executable overrides remain user-managed.
+The checkout contains the reviewed Windows executable in
+`third_party/browser-binaries/` with [licensing and build provenance](../third_party/browser/README.md).
+Desktop staging and managed installation from source validate the pinned
+size and digest before using it. Desktop packages use the bundled engine.
+A standalone npm install without the vendored file uses the same pinned
+artifact from Adv-grok-premius GitHub Releases. Explicit executable overrides
+remain user-managed.
 Remove the backport when an official release includes the fix and passes the
 same native cold-start and restart tests.
 

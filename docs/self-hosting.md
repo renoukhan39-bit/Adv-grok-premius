@@ -122,10 +122,10 @@ would answer the whole internet over plain http. More options are in
 
 On a fresh Ubuntu 22.04 or 24.04 server (x86-64), one command checks the
 server, installs MausBot under `/opt/openmausbot` and ends with HTTPS on your
-domain:
+domain. The installer requires a published Adv-grok-premius server image.
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/milind-soni/OpenMausBot/main/deploy/install.sh | sudo sh -s -- --domain maus.example.com
+curl -fsSL https://raw.githubusercontent.com/renoukhan39-bit/Adv-grok-premius/main/deploy/install.sh | sudo sh -s -- --domain maus.example.com
 cd /opt/openmausbot && sudo docker compose exec omb openmausbot pair   # Link https://<DOMAIN>/pair#code=…
 ```
 
@@ -138,9 +138,10 @@ writes and what it contacts are in
 By hand, on any system with Docker:
 
 ```sh
-git clone https://github.com/milind-soni/OpenMausBot && cd OpenMausBot/deploy
+git clone https://github.com/renoukhan39-bit/Adv-grok-premius && cd Adv-grok-premius/deploy
 cp .env.example .env                          # set DOMAIN (and ENGINES)
-docker compose pull omb && docker compose up -d
+printf '\nOMB_IMAGE=openmausbot-local:latest\n' >> .env
+docker compose up -d --build
 docker compose exec omb openmausbot pair      # Link https://<DOMAIN>/pair#code=…
 ```
 
@@ -177,12 +178,11 @@ npx openmausbot pair
 > Use it on a machine only you sign in to, and put a host firewall in front
 > (`ufw`, `firewalld`) that lets in only what you mean to serve.
 
-It needs Linux and Podman 4.9 or newer. One command run as your own user,
-without `sudo`, installs the published server image as your user's systemd
-service:
+It needs Linux, Podman 4.9 or newer, and a published Adv-grok-premius server
+image. Run the installer as your own user to create the systemd service:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/milind-soni/OpenMausBot/main/deploy/podman/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/renoukhan39-bit/Adv-grok-premius/main/deploy/podman/install.sh | sh
 podman exec -it openmausbot openmausbot pair      # a code, and a sign-in link for this machine's browser
 ```
 
@@ -477,18 +477,16 @@ Requirements: Docker with Compose, a DNS name pointing at the machine, and
 ports 80/443 open.
 
 ```sh
-git clone https://github.com/milind-soni/OpenMausBot && cd OpenMausBot/deploy
+git clone https://github.com/renoukhan39-bit/Adv-grok-premius && cd Adv-grok-premius/deploy
 cp .env.example .env            # set DOMAIN
-docker compose pull omb && docker compose up -d
+printf '\nOMB_IMAGE=openmausbot-local:latest\n' >> .env
+docker compose up -d --build
 ```
 
-That starts the image CI publishes on every `main` push
-(`ghcr.io/milind-soni/openmausbot:latest`; each release is also tagged `v…`,
-and the one our own Clouds have run for 48 hours is `stable`). Move to the
-stable version right away with `./update.sh`, which pins it by digest in
-`.env`. To build from your checkout instead: `docker compose up -d --build`. The
-build needs about 6 GB of memory: on a smaller server, add swap first or use
-the published image.
+That builds the server image from your checkout. The build needs about 6 GB
+of memory. On a smaller server, add swap or use a published image. To run a
+published image, set `OMB_IMAGE=ghcr.io/renoukhan39-bit/adv-grok-premius:vX.Y.Z`
+in `.env` with an available version and run `docker compose pull omb && docker compose up -d`.
 
 Then sign the engine CLIs in **inside the container** (their logins live on
 the `data` volume, so they survive restarts and image upgrades) and mint a
@@ -545,7 +543,7 @@ docker compose build --build-arg CHROME_CACHE_TAG=$(date +%F) omb && docker comp
 
 These platforms run the image's own command, with no `--init`, and usually
 with a 64 MB `/dev/shm` and a limit on how many processes the container may
-hold. The server image (`ghcr.io/milind-soni/openmausbot`) is built for that:
+hold. The server image (`ghcr.io/renoukhan39-bit/adv-grok-premius`) is built for that:
 
 - **It brings its own init.** tini is the image's entrypoint and collects
   the processes that bots' engines, browsers and shell commands leave behind.
@@ -557,7 +555,7 @@ hold. The server image (`ghcr.io/milind-soni/openmausbot`) is built for that:
   init of the platform's own on top (`docker run --init`, Compose's
   `init: true`) does no harm. A command you give the container runs as
   written, so start it with `openmausbot …` or `node …`
-  (`docker run --rm ghcr.io/milind-soni/openmausbot openmausbot --version`):
+  (`docker run --rm ghcr.io/renoukhan39-bit/adv-grok-premius openmausbot --version`):
   a bare `--version` or `dist-server/openmausbot.js`, which older images
   passed on to Node, no longer starts.
 - **Chrome does not need a larger `/dev/shm`.** Where `/dev/shm` is under
@@ -746,7 +744,7 @@ Requirements: Node 24+, pnpm, and at least one agent CLI installed and
 signed in on the server.
 
 ```sh
-git clone https://github.com/milind-soni/OpenMausBot && cd OpenMausBot
+git clone https://github.com/renoukhan39-bit/Adv-grok-premius && cd Adv-grok-premius
 pnpm install
 
 # choose where data lives and start the server
@@ -1935,7 +1933,7 @@ directory and lasts across restarts until it is resumed.
 
 Self-hosted servers follow the **stable** channel: a released version that our
 own Clouds have run for 48 hours, named by the image tag `stable` and by
-[`stable.json`](https://raw.githubusercontent.com/milind-soni/OpenMausBot/channels/stable.json).
+[`stable.json`](https://raw.githubusercontent.com/renoukhan39-bit/Adv-grok-premius/channels/stable.json).
 `latest` follows `main` and is not for a server you rely on. The update check
 (`GET /api/updates/check`, **Check for updates** in the app) compares the
 server with the stable version; `OMB_UPDATE_CHANNEL=newest` makes it follow

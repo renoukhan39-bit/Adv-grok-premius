@@ -13,10 +13,12 @@ If you only want to use a remote Docker desktop while MausBot and its agents sta
 On a fresh Ubuntu 22.04 or 24.04 server (x86-64) with a domain name pointing at it, the installer checks the server, installs MausBot with Docker under `/opt/openmausbot` and ends with HTTPS on your domain:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/milind-soni/OpenMausBot/main/deploy/install.sh | sudo sh -s -- --domain maus.example.com
+curl -fsSL https://raw.githubusercontent.com/renoukhan39-bit/Adv-grok-premius/main/deploy/install.sh | sudo sh -s -- --domain maus.example.com
 ```
 
 Add `--check` to only check the server; it changes nothing. Run the command again to update or repair, and `--uninstall` to stop the server while keeping your data. [Deploy on a VPS](/docs/self-hosting/deploy-vps#quick-start-one-command-on-your-own-domain) lists every check, the files it writes and how the first admin signs in.
+
+The installer requires a published Adv-grok-premius server image. See [Build and deploy with Docker](/docs/self-hosting/deploy-vps#path-b-your-own-domain-with-docker) for a source checkout.
 
 ## On your own computer, or by hand
 
