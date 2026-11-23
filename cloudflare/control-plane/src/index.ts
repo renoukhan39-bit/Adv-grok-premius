@@ -4,6 +4,7 @@ import { accountSession, createAuth, deleteExpiredVerifications } from "./auth";
 import { readConfig, type ControlPlaneConfig } from "./config";
 import { errorResponse, HTTPError, json, preflight, secureResponse, withBoundedRequestBody } from "./http";
 import { limitedOTPResponse } from "./otp-rate-limit";
+import { pricingPage, readPublicPlans } from "./public-plans";
 import type { CloudflareFetch } from "./cloudflare-api";
 import {
   cleanupEndpointForInstallation,
@@ -77,6 +78,17 @@ async function route(
 ) {
   const url = new URL(request.url);
   if (request.method === "OPTIONS") return preflight(request, config);
+
+  if (request.method === "GET" && (url.pathname === "/v1/plans" || url.pathname === "/pricing")) {
+    const page = url.pathname === "/pricing";
+    try {
+      const plans = await readPublicPlans(env.DB);
+      return page ? pricingPage(plans) : json({ plans });
+    } catch {
+      console.error(JSON.stringify({ message: "public plans unavailable", requestId }));
+      return page ? pricingPage(null) : errorResponse(503, "plans_unavailable");
+    }
+  }
 
   if (url.pathname.startsWith("/api/auth/")) {
     const limited = await limitedOTPResponse(request, env);
