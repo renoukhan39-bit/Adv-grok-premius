@@ -20,7 +20,7 @@ async function workspace() {
   if (!configured || !isAbsolute(configured)) {
     throw new Error("Video workspace is not configured; set OPENMAUSBOT_VIDEO_WORKSPACE_ROOT to a trusted absolute workspace directory");
   }
-  const root = await realpath(configured);
+  const root = await realpath(configured).catch(() => { throw new Error("Configured video workspace is unavailable"); });
   if (!(await stat(root)).isDirectory()) throw new Error("Video workspace is not a directory");
   const scope = createHash("sha256").update(root).digest("hex").slice(0, 20);
   return { root, scope };
@@ -71,7 +71,9 @@ function parseArtifactUri(uri, scope) {
 
 export async function renderWorkspaceVideo(planPath) {
   const { root, scope } = await workspace();
-  const source = await realpath(resolve(root, ...planParts(planPath)));
+  const source = await realpath(resolve(root, ...planParts(planPath))).catch(() => {
+    throw new Error("Scene plan is unavailable in the selected workspace");
+  });
   if (!inside(root, source) || source.startsWith(join(root, ARTIFACTS) + sep)) {
     throw new Error("Scene plan is outside the selected workspace");
   }
@@ -84,7 +86,12 @@ export async function renderWorkspaceVideo(planPath) {
     return { artifact: artifactUri(scope, name), duration, width, height };
   } catch (error) {
     await rm(destination, { force: true });
-    throw error;
+    if (/ffmpeg could not render/.test(error.message)) throw new Error("ffmpeg could not render the scene plan");
+    if (/requires ffmpeg/.test(error.message)) throw new Error("Rendering requires ffmpeg with libx264");
+    if (/outside the scene plan directory/.test(error.message)) throw new Error("A scene image is outside the scene plan directory");
+    if (/ffprobe|Verified video/.test(error.message)) throw new Error("Rendered video verification failed");
+    if (/^(Scene plan must|Scene \d+ needs|Use even dimensions|A render can)/.test(error.message)) throw error;
+    throw new Error("Scene plan rendering failed; check the local media files");
   }
 }
 
@@ -93,7 +100,10 @@ export async function readWorkspaceVideo(uri) {
   const name = parseArtifactUri(uri, scope);
   const folder = await artifactDirectory(root);
   const filename = join(folder, name);
-  const handle = await open(filename, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  const file = await lstat(filename).catch(() => { throw new Error("Video artifact not found in the selected workspace"); });
+  if (!file.isFile()) throw new Error("Video artifact must be a regular file");
+  const handle = await open(filename, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
+    .catch(() => { throw new Error("Video artifact could not be opened in the selected workspace"); });
   try {
     const info = await handle.stat();
     if (!info.isFile() || info.size < 1 || info.size > MAX_READ_BYTES) {

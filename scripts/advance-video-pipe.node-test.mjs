@@ -109,6 +109,9 @@ it("denies cross-workspace plans and artifacts without producing any file", { sk
   const forbidden = await callA("tools/call", { name: "advance-video-pipe_render_scene_plan", arguments: { plan_path: "../b/scenes/foreign.json" } });
   assert.equal(forbidden.isError, true);
   assert.match(forbidden.content[0].text, /selected workspace/);
+  const missing = await callA("tools/call", { name: "advance-video-pipe_render_scene_plan", arguments: { plan_path: "scenes/missing.json" } });
+  assert.equal(missing.isError, true);
+  assert.equal(JSON.stringify(missing).includes(a), false, "Missing input must not expose a host path");
   if (process.platform !== "win32") {
     await symlink(join(b, "scenes", "foreign.json"), join(a, "scenes", "linked.json"));
     const linked = await callA("tools/call", { name: "advance-video-pipe_render_scene_plan", arguments: { plan_path: "scenes/linked.json" } });
@@ -130,6 +133,7 @@ it("returns tool errors and publishes no artifact for a failed render", { skip: 
   const error = await call("tools/call", { name: "advance-video-pipe_render_scene_plan", arguments: { plan_path: "scenes/plan.json" } });
   assert.equal(error.isError, true);
   assert.match(error.content[0].text, /ffmpeg could not render/);
+  assert.equal(JSON.stringify(error).includes(a), false, "Render errors must not expose host paths");
   assert.deepEqual((await call("resources/list")).resources, []);
   assert.deepEqual(await readdir(join(a, ".advance-video-pipe", "artifacts")), []);
 });
