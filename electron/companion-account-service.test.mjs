@@ -2494,3 +2494,17 @@ describe("A stored address the control plane no longer holds", () => {
     signedOut.service.dispose();
   });
 });
+
+it("keeps signed-out subscription reads offline and drops a response after the account changes", async () => {
+  const pending = Promise.withResolvers();
+  const client = readyClient({ subscription: vi.fn(() => pending.promise) });
+  const { service, store } = serviceFixture({ client });
+  await expect(service.subscription()).rejects.toMatchObject({ code: "signed_out" });
+  expect(client.subscription).not.toHaveBeenCalled();
+  await store.update(() => signedCredentials());
+  const read = service.subscription();
+  expect(client.subscription).toHaveBeenCalledWith(ACCOUNT_TOKEN);
+  await store.update(() => ({}));
+  pending.resolve({ plan: "agency", status: "active", periodEndsAt: 345600000 });
+  await expect(read).rejects.toMatchObject({ code: "signed_out" });
+});

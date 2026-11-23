@@ -11,7 +11,7 @@ Status refers to the requested product behavior in this checkout. Existing primi
 | Area | Existing implementation | Remaining delivery |
 | --- | --- | --- |
 | Offline Free | Local engines, BYOK, local store, approval cards and local computer providers | Regression-test offline start and the proposed three starter playbooks. |
-| Pricing and subscriptions | This change adds a public database-backed three-plan catalog and pricing page. Desktop already displays the separate Admin’s offers and verified session. | Account-scoped subscription state, provider events, reconciliation, checkout, plan management and admin adjustments. |
+| Pricing and subscriptions | This change adds a public database-backed three-plan catalog and pricing page. Desktop already displays the separate Admin’s offers and verified session. | The signed-in subscription read is implemented below. Provider events, reconciliation, checkout, plan management and admin adjustments. |
 | Managed harness | `server/fleet.ts`, routine recovery, webhook ingress and hosted-workspace sign-in | Entitled allocation, durable job queue, timeout, quota and restart reconciliation with the laptop closed. |
 | Credits and routing | `server/usage-ledger.ts` records attribution, reported or estimated cost. Engine drivers and model catalogs exist. | Transactional wallets, reservations, refunds, route policy, hard budgets and team pooling. |
 | Mobile approvals | Local approval broker, companion relay and installation credentials | Official Telegram and WhatsApp linking, expiring one-time decisions and role escalation. |
@@ -28,6 +28,14 @@ Status refers to the requested product behavior in this checkout. Existing primi
 `GET /v1/plans` returns public `id`, `label` and `price: {amount, currency, interval}` in display order. Amounts are integer US cents per month. `GET /pricing` serves the accessible comparison directly from the same query, including empty and temporarily unavailable states. Both are anonymous read-only endpoints under the Worker's existing HTTP protections. A catalog entry confers no access. The upstream Cloud Admin retains authority over its own checkout.
 
 Migration `0019_public_plans.sql` adds only `public_plans`. Free is fixed at $0. The Pro and Agency defaults are $29 and $129 per month. Operators can update the monthly amount within each row's configured bounds ($25–39 and $99–149). For example, `UPDATE public_plans SET monthly_usd_cents = 3500 WHERE id = 'pro'`. This changes the public quote only.
+
+## Signed-in subscription read
+
+Settings → Phone & devices shows the companion account email, effective plan and period end on this computer. Opening that view calls `GET /v1/me/subscription` using the companion account bearer retained by Electron main. The public pricing page and the separate Cloud Admin billing screen keep their own contracts. Signed-out local use performs no subscription lookup.
+
+Migration `0020_account_subscriptions.sql` adds one current subscription snapshot per Better Auth user, with a foreign key to the catalog. The response contains only `{ subscription: { plan, status, periodEndsAt } }`. Times are UTC Unix milliseconds. Active or canceling accounts retain their paid plan from the inclusive start until the exclusive end. At the end, return Free with status `expired` and the elapsed boundary. Missing, future, immediately canceled and unpaid periods yield Free. The database contains no billing events or credentials. A future provider adapter will own the writes and its deduplication journal.
+
+Verify with `pnpm --filter @openmausbot/control-plane test` and `pnpm exec vitest run electron/control-plane-client.test.mjs electron/companion-account-service.test.mjs src/components/CompanionSubscription.test.ts`. Apply migrations to a disposable local D1 database. A downgrade of application code can leave this additive table intact.
 
 ## Design for subsequent slices
 

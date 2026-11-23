@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { readAccountSubscription } from "./account-subscription";
 import { accountSession, createAuth, deleteExpiredVerifications } from "./auth";
 import { readConfig, type ControlPlaneConfig } from "./config";
 import { errorResponse, HTTPError, json, preflight, secureResponse, withBoundedRequestBody } from "./http";
@@ -116,6 +117,11 @@ async function route(
   }
 
   const auth = createAuth(env, ctx, config, requestId);
+  if (request.method === "GET" && url.pathname === "/v1/me/subscription") {
+    const session = await accountSession(request, auth);
+    if (!session) throw new HTTPError(401, "unauthorized");
+    return json({ subscription: await readAccountSubscription(env.DB, session.user.id) });
+  }
   if (request.method === "GET" && url.pathname === "/v1/me") {
     const session = await accountSession(request, auth);
     if (!session) throw new HTTPError(401, "unauthorized");

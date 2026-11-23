@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { applyD1Migrations, createExecutionContext, waitOnExecutionContext } from "cloudflare:test";
 import { describe, expect, it, vi } from "vitest";
 
+import { readAccountSubscription } from "../src/account-subscription";
 import { createAuth } from "../src/auth";
 import { readConfig } from "../src/config";
 import { buildOTPEmail, sendOTPEmail } from "../src/email";
@@ -1028,5 +1029,40 @@ describe("HTTP boundary hardening", () => {
     });
     expect(deniedPreflight.status).toBe(403);
     expect(deniedPreflight.headers.get("access-control-allow-origin")).toBe("https://app.openmausbot.test");
+  });
+});
+
+describe("the account's effective subscription", () => {
+  it("binds the response to the signed session and keeps Free available without a row", async () => {
+    const alice = await signIn("subscription-alice@example.test");
+    const bob = await signIn("subscription-bob@example.test");
+    const path = "/v1/me/subscription";
+    const until = Date.now() + 86_400_000;
+    await env.DB.prepare("INSERT INTO account_subscriptions (user_id, plan_id, status, period_start_ms, period_end_ms) VALUES (?, 'agency', 'canceling', ?, ?)")
+      .bind(alice.userId, until - 172_800_000, until).run();
+    expect((await call(path)).status).toBe(401);
+    expect((await call(path, { token: "omb_install_invalid" })).status).toBe(401);
+    const paid = await call(path, { token: alice.token });
+    expect(paid.status).toBe(200);
+    expect(paid.headers.get("cache-control")).toBe("no-store");
+    expect(await paid.json()).toEqual({ subscription: { plan: "agency", status: "canceling", periodEndsAt: until } });
+    expect(await (await call(`${path}?userId=${alice.userId}`, { token: bob.token })).json())
+      .toEqual({ subscription: { plan: "free", status: "free", periodEndsAt: null } });
+  });
+
+  it("starts and ends paid access at the exact period boundaries and revokes unpaid access", async () => {
+    const { userId } = await signIn("subscription-period@example.test");
+    const read = (now: number) => readAccountSubscription(env.DB, userId, now);
+    const free = { plan: "free", status: "free", periodEndsAt: null };
+    await env.DB.prepare("INSERT INTO account_subscriptions (user_id, plan_id, status, period_start_ms, period_end_ms) VALUES (?, 'pro', 'active', 100, 200)")
+      .bind(userId).run();
+    expect(await read(99)).toEqual(free);
+    expect(await read(100)).toEqual({ plan: "pro", status: "active", periodEndsAt: 200 });
+    expect(await read(199)).toEqual({ plan: "pro", status: "active", periodEndsAt: 200 });
+    expect(await read(200)).toEqual({ plan: "free", status: "expired", periodEndsAt: 200 });
+    for (const status of ["canceled", "past_due"]) {
+      await env.DB.prepare("UPDATE account_subscriptions SET status = ? WHERE user_id = ?").bind(status, userId).run();
+      expect(await read(150)).toEqual(free);
+    }
   });
 });

@@ -965,6 +965,17 @@ export function createCompanionAccountService({
   };
 
   return Object.freeze({
+    subscription: async () => {
+      const document = credentials();
+      const account = storedAccount(document);
+      if (!client || !account?.accountToken || companionAccountCleanupPending(document)) throw new ControlPlaneError("signed_out", 401);
+      const subscription = await client.subscription(account.accountToken);
+      const current = credentials();
+      if (companionAccountCleanupPending(current) || storedAccount(current)?.accountToken !== account.accountToken) {
+        throw new ControlPlaneError("signed_out", 401);
+      }
+      return subscription;
+    },
     state: async () => {
       await probeControlPlane();
       return settledState();

@@ -48,6 +48,7 @@ export interface ControlPlaneClient {
   requestOTP(email: string): Promise<unknown>;
   verifyOTP(email: string, otp: string): Promise<{ accountToken: string; user: ControlPlaneUser }>;
   me(accountToken: string): Promise<ControlPlaneUser>;
+  subscription(accountToken: string): Promise<import("../shared/account-subscription.ts").AccountSubscription>;
   listInstallations(accountToken: string): Promise<ControlPlaneInstallation[]>;
   ensureInstallation(input: {
     accountToken: string;

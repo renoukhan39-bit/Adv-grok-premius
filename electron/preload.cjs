@@ -310,6 +310,7 @@ const bridge = {
   /** Secrets stay in the main process; the renderer sees only status and narrow actions. */
   companionAccount: {
     state: () => ipcRenderer.invoke("companion-account:state"),
+    subscription: () => ipcRenderer.invoke("companion-account:subscription"),
     requestCode: (email) => ipcRenderer.invoke("companion-account:request-code", email),
     verifyCode: (email, code) => ipcRenderer.invoke("companion-account:verify-code", email, code),
     retry: () => ipcRenderer.invoke("companion-account:retry"),
