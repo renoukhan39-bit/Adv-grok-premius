@@ -330,6 +330,7 @@ const __APP_VERSION__: string;
       };
       companionAccount?: {
         state(): Promise<CompanionAccountState>;
+        subscription?(): Promise<import("../../shared/account-subscription.ts").AccountSubscription>;
         requestCode(email: string): Promise<CompanionAccountState>;
         verifyCode(email: string, code: string): Promise<CompanionAccountState>;
         retry(): Promise<CompanionAccountState>;

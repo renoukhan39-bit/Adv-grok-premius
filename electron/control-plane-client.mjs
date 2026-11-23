@@ -343,6 +343,21 @@ export function createControlPlaneClient({
       return user;
     },
 
+    async subscription(accountToken) {
+      if (!boundedSecret(accountToken)) throw new ControlPlaneError("signed_out", 401);
+      const { payload } = await request("/v1/me/subscription", { token: accountToken });
+      const value = plainObject(payload.subscription);
+      if (!value) throw new ControlPlaneError("invalid_response");
+      const { plan, status, periodEndsAt } = value;
+      if (plan === "free" && status === "free" && periodEndsAt === null) return { plan, status, periodEndsAt };
+      const validEnd = Number.isSafeInteger(periodEndsAt) && periodEndsAt > 0 && periodEndsAt <= 8_640_000_000_000_000;
+      if (validEnd && ((plan === "free" && status === "expired")
+        || ((plan === "pro" || plan === "agency") && (status === "active" || status === "canceling")))) {
+        return { plan, status, periodEndsAt };
+      }
+      throw new ControlPlaneError("invalid_response");
+    },
+
     async listInstallations(accountToken) {
       return accountInstallations(accountToken);
     },

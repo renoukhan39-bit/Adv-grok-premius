@@ -463,3 +463,18 @@ describe("control-plane desktop client", () => {
     });
   });
 });
+
+it("reads only the account subscription projection and rejects invalid combinations", async () => {
+  const subscription = { plan: "agency", status: "canceling", periodEndsAt: 345600000 };
+  const fetchImpl = vi.fn()
+    .mockResolvedValueOnce(jsonResponse({ subscription: { ...subscription, privateNote: "fixture" } }))
+    .mockResolvedValueOnce(jsonResponse({ subscription: { ...subscription, plan: "free" } }));
+  const client = createControlPlaneClient({ baseURL: "http://127.0.0.1:8787", fetchImpl });
+  await expect(client.subscription("")).rejects.toMatchObject({ code: "signed_out" });
+  expect(fetchImpl).not.toHaveBeenCalled();
+  await expect(client.subscription(ACCOUNT)).resolves.toEqual(subscription);
+  const [url, init] = fetchImpl.mock.calls[0];
+  expect(String(url)).toBe("http://127.0.0.1:8787/v1/me/subscription");
+  expect(new Headers(init.headers).get("authorization")).toBe(`Bearer ${ACCOUNT}`);
+  await expect(client.subscription(ACCOUNT)).rejects.toMatchObject({ code: "invalid_response" });
+});

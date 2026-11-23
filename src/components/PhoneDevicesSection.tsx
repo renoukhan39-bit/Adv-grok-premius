@@ -22,6 +22,7 @@ import { showTunnelRetiredNotice } from "../lib/phone-link";
 import { PhonesList } from "./PhonesList";
 import { PairedPhones } from "./PairedPhones";
 import { TailnetComputers } from "./TailnetComputers";
+import { CompanionSubscription } from "./CompanionSubscription";
 import { AlwaysOnHomeSection } from "./AlwaysOnHomeSection";
 import { RemoteAccessCheckRow } from "./RemoteAccessCheck";
 import { LearnMore, SettingRow, SettingsFoldRow, SettingsGroup, SettingsLinkRow, SettingsRows, Switch } from "./SettingsPrimitives";
@@ -142,6 +143,7 @@ export function deriveCompanionPanelStatus(
 ): CompanionPanelStatus | null {
   if (state.error) return { label: t("remote.status.attention"), good: false };
   if (!companionRoutesOn(state)) return { label: t("remote.status.off"), good: false };
+  const subscription = companionAccountBridge()?.subscription;
   const pairedCount = state.devices.length;
   if (!pairedCount) return null;
   return {
@@ -474,6 +476,9 @@ export function PhoneDevicesSection({ profileEmail = "", focusRequest = 0, simpl
         </SettingsGroup>
       )}
 
+      {subscription && c.account?.status === "ready" && c.account.email && (
+        <CompanionSubscription key={c.account.email} email={c.account.email} read={subscription} />
+      )}
       <AlwaysOnHomeSection c={c} state={state} blocked={managedBy} onAddPhone={() => { if (!remoteBlocked) setPairing("device"); }} />
 
       {!reachOpen ? (

@@ -2436,6 +2436,7 @@ ipcMain.handle("desktop-remote:disconnect", localOnly("desktop-remote:disconnect
 
 // Auth and connector credentials never cross this boundary.
 ipcMain.handle("companion-account:state", localOnly("companion-account:state", () => ensureCompanionAccountService().state()));
+ipcMain.handle("companion-account:subscription", localOnly("companion-account:subscription", () => ensureCompanionAccountService().subscription()));
 ipcMain.handle("companion-account:request-code", localOnly("companion-account:request-code", (_event, email) =>
   ensureCompanionAccountService().requestCode(email),
 ));
