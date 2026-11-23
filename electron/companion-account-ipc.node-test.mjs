@@ -178,3 +178,21 @@ test("starting the phone link checks a stored address first and waits on it only
   assert.equal(starts[0].start, context.startManagedCompanionConnection);
   assert.equal(starts[0].desired(), true);
 });
+
+test("only a local page can read the stored account's subscription and the page supplies no identity", async () => {
+  const origin = "http://127.0.0.1:49210";
+  localOrigin.setLocalOrigin(origin);
+  let handler;
+  const calls = [];
+  const subscription = { plan: "pro", status: "active", periodEndsAt: 345600000 };
+  vm.runInContext(slice('ipcMain.handle("companion-account:subscription"', 'ipcMain.handle("companion-account:request-code"'), vm.createContext({
+    ipcMain: { handle: (_name, listener) => { handler = listener; } },
+    localOnly: localOrigin.localOnly,
+    ensureCompanionAccountService: () => ({
+      subscription: (...args) => { calls.push(args); return Promise.resolve(subscription); },
+    }),
+  }));
+  await assert.rejects(async () => handler({ senderFrame: { url: "https://remote.example.test/" } }), /only available/);
+  assert.deepEqual(await handler({ senderFrame: { url: origin + "/" } }, "some-other-account"), subscription);
+  assert.deepEqual(calls, [[]]);
+});
